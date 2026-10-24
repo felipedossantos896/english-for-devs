@@ -2,12 +2,15 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes } from 'react-router-do
 import { DeckPage } from './features/flashcards/DeckPage';
 import { DecksPage } from './features/flashcards/DecksPage';
 import { ReviewPage } from './features/flashcards/ReviewPage';
+import { InterviewPage } from './features/interview/InterviewPage';
+import { QuestionPage } from './features/interview/QuestionPage';
 import { PhasesPage } from './features/phases/PhasesPage';
 import { RoutinePage } from './features/routine/RoutinePage';
 
 const navItems = [
   { to: '/today', label: 'Today' },
   { to: '/cards', label: 'Flashcards' },
+  { to: '/interview', label: 'Interview' },
   { to: '/phases', label: 'Phases' },
 ];
 
@@ -38,6 +41,8 @@ export function App() {
             <Route path="/cards" element={<DecksPage />} />
             <Route path="/cards/decks/:deckId" element={<DeckPage />} />
             <Route path="/cards/review" element={<ReviewPage />} />
+            <Route path="/interview" element={<InterviewPage />} />
+            <Route path="/interview/:questionId" element={<QuestionPage />} />
             <Route path="/phases" element={<PhasesPage />} />
           </Routes>
         </main>

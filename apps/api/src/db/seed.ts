@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db, pool } from './client.js';
 import { cards, decks, goals, interviewQuestions, phases, routineTasks, users } from './schema.js';
 import { starterCards } from './starter-cards.js';
+import { starterQuestions } from './starter-questions.js';
 
 async function seed() {
   const [user] = await db
@@ -46,15 +47,6 @@ async function seed() {
     { userId: user.id, name: 'Interview expressions', layer: 'interview', position: 4 },
   ]);
 
-  await db.insert(interviewQuestions).values([
-    { userId: user.id, stage: 'hr', question: 'Tell me about yourself.' },
-    { userId: user.id, stage: 'hr', question: 'Why do you want to work here?' },
-    { userId: user.id, stage: 'behavioral', question: 'Tell me about a time you disagreed with a teammate.' },
-    { userId: user.id, stage: 'behavioral', question: 'Describe a project you are proud of.' },
-    { userId: user.id, stage: 'technical', question: 'Walk me through how you would debug a slow API endpoint.' },
-    { userId: user.id, stage: 'closing', question: 'Do you have any questions for us?' },
-  ]);
-
   console.log('Seed complete.');
 }
 
@@ -74,8 +66,25 @@ async function seedCards() {
   }
 }
 
+/** Adds starter interview questions the user does not have yet, matched by text. */
+async function seedQuestions() {
+  for (const user of await db.select().from(users)) {
+    const existing = await db
+      .select({ question: interviewQuestions.question })
+      .from(interviewQuestions)
+      .where(eq(interviewQuestions.userId, user.id));
+    const known = new Set(existing.map((q) => q.question));
+
+    const missing = starterQuestions.filter((q) => !known.has(q.question));
+    if (missing.length === 0) continue;
+    await db.insert(interviewQuestions).values(missing.map((q) => ({ userId: user.id, ...q })));
+    console.log(`Added ${missing.length} interview questions.`);
+  }
+}
+
 seed()
   .then(seedCards)
+  .then(seedQuestions)
   .catch((err) => {
     console.error(err);
     process.exitCode = 1;

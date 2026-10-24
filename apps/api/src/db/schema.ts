@@ -137,17 +137,22 @@ export const interviewQuestions = pgTable('interview_questions', {
   difficulty: smallint('difficulty').notNull().default(1),
 });
 
-export const starAnswers = pgTable('star_answers', {
-  id: id(),
-  questionId: uuid('question_id').notNull().references(() => interviewQuestions.id, { onDelete: 'cascade' }),
-  situation: text('situation').notNull().default(''),
-  task: text('task').notNull().default(''),
-  action: text('action').notNull().default(''),
-  result: text('result').notNull().default(''),
-  fullAnswer: text('full_answer'),
-  version: integer('version').notNull().default(1),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const starAnswers = pgTable(
+  'star_answers',
+  {
+    id: id(),
+    questionId: uuid('question_id').notNull().references(() => interviewQuestions.id, { onDelete: 'cascade' }),
+    situation: text('situation').notNull().default(''),
+    task: text('task').notNull().default(''),
+    action: text('action').notNull().default(''),
+    result: text('result').notNull().default(''),
+    fullAnswer: text('full_answer'),
+    version: integer('version').notNull().default(1),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // Every save inserts a new version, so earlier answers are kept as history.
+  (t) => [unique().on(t.questionId, t.version)],
+);
 
 export const rehearsals = pgTable('rehearsals', {
   id: id(),
