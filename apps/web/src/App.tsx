@@ -1,13 +1,13 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from './components/AppShell';
-import { StyleguidePage } from './features/styleguide/StyleguidePage';
-import { DeckPage } from './features/flashcards/DeckPage';
-import { DecksPage } from './features/flashcards/DecksPage';
-import { ReviewPage } from './features/flashcards/ReviewPage';
-import { InterviewPage } from './features/interview/InterviewPage';
-import { QuestionPage } from './features/interview/QuestionPage';
-import { PhasesPage } from './features/phases/PhasesPage';
-import { RoutinePage } from './features/routine/RoutinePage';
+import { AppShell } from '@/components/app-shell';
+import { StyleguidePage } from '@/features/styleguide/StyleguidePage';
+import { DeckPage } from '@/features/flashcards/DeckPage';
+import { DecksPage } from '@/features/flashcards/DecksPage';
+import { ReviewPage } from '@/features/flashcards/ReviewPage';
+import { InterviewPage } from '@/features/interview/InterviewPage';
+import { QuestionPage } from '@/features/interview/QuestionPage';
+import { PhasesPage } from '@/features/phases/PhasesPage';
+import { RoutinePage } from '@/features/routine/RoutinePage';
 
 export function App() {
   return (

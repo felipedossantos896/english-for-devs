@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RoutineTodayDto } from '@efd/shared';
-import { Alert, Card, ErrorState, LoadingState, PageHeader, ProgressBar, Stat, Text } from '../../components/ui';
-import { api } from '../../lib/api';
-import { cn } from '../../lib/cn';
+import { PartyPopper } from 'lucide-react';
+import { ErrorState, LoadingState, SaveError } from '@/components/states';
+import { Stat } from '@/components/stat';
+import { PageHeader } from '@/components/typography';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
+import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 const queryKey = ['routine', 'today'];
 
@@ -35,54 +42,55 @@ export function RoutinePage() {
           month: 'long',
           day: 'numeric',
         })}
-        actions={<Stat icon="🔥" value={data.streak} label="weekday streak" tone="accent" />}
+        actions={<Stat icon="🔥" value={data.streak} label="weekday streak" tone="highlight" />}
       />
 
       {!data.isStudyDay ? (
-        <Alert>No study tasks today. Enjoy the weekend: your streak is safe.</Alert>
+        <Alert>
+          <AlertDescription>No study tasks today. Enjoy the weekend: your streak is safe.</AlertDescription>
+        </Alert>
       ) : (
-        <Card padding="none">
-          <div className="space-y-2 border-b border-border px-5 py-4">
+        <Card className="gap-0 py-0">
+          <div className="space-y-2 border-b px-5 py-4">
             <div className="flex justify-between text-sm">
-              <span className="font-semibold text-fg">
+              <span className="font-semibold">
                 {doneCount} of {data.tasks.length} done
               </span>
-              <span className="text-fg-muted">{totalMinutes} min total</span>
+              <span className="text-muted-foreground">{totalMinutes} min total</span>
             </div>
-            <ProgressBar
-              label="Tasks done today"
-              value={data.tasks.length ? doneCount / data.tasks.length : 0}
-              tone={data.completed ? 'success' : 'primary'}
+            <Progress
+              aria-label="Tasks done today"
+              value={data.tasks.length ? (doneCount / data.tasks.length) * 100 : 0}
+              indicatorClassName={data.completed ? 'bg-success' : undefined}
             />
           </div>
-          <ul className="divide-y divide-border">
+          <ul className="divide-y">
             {data.tasks.map((task) => (
               <li key={task.id}>
                 {/* The whole row is the hit area, not only the small checkbox (Fitts's law). */}
-                <label className="flex min-h-14 cursor-pointer items-center gap-4 px-5 py-3 transition-colors hover:bg-primary-soft">
-                  <input
-                    type="checkbox"
-                    className="size-5 shrink-0 accent-navy-700"
+                <label className="flex min-h-14 cursor-pointer items-center gap-4 px-5 py-3 transition-colors hover:bg-accent">
+                  <Checkbox
                     checked={task.checked}
                     disabled={toggle.isPending}
-                    onChange={(e) => toggle.mutate({ taskId: task.id, checked: e.target.checked })}
+                    onCheckedChange={(checked) => toggle.mutate({ taskId: task.id, checked: checked === true })}
                   />
-                  <span className={cn('flex-1', task.checked && 'text-fg-subtle line-through')}>{task.title}</span>
-                  <Text as="span" size="sm" tone="muted" className="tabular-nums">
-                    {task.minutes} min
-                  </Text>
+                  <span className={cn('flex-1', task.checked && 'text-ink-500 line-through')}>{task.title}</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">{task.minutes} min</span>
                 </label>
               </li>
             ))}
           </ul>
           {data.completed && (
-            <div className="border-t border-border p-4">
-              <Alert tone="success">🎉 All done for today. Great work!</Alert>
+            <div className="border-t p-4">
+              <Alert variant="success">
+                <PartyPopper />
+                <AlertDescription>All done for today. Great work!</AlertDescription>
+              </Alert>
             </div>
           )}
         </Card>
       )}
-      {toggle.error && <Alert tone="danger">Could not save: {toggle.error.message}</Alert>}
+      <SaveError error={toggle.error} />
     </section>
   );
 }

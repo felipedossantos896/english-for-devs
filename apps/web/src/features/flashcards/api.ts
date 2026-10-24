@@ -1,5 +1,5 @@
 import type { CardDto, DeckDto } from '@efd/shared';
-import { api } from '../../lib/api';
+import { api } from '@/lib/api';
 
 export interface CardInput {
   front: string;

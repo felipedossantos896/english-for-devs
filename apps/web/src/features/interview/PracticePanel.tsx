@@ -1,8 +1,18 @@
 import { answerLengthFeedback, formatDuration, type InterviewQuestionDetailDto } from '@efd/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, Field, Heading, ListCard, Text, Textarea } from '../../components/ui';
-import { cn } from '../../lib/cn';
+import { Eye, EyeOff, Mic, Square, Star } from 'lucide-react';
+import { Field } from '@/components/field';
+import { ListCard } from '@/components/list-card';
+import { SaveError } from '@/components/states';
+import { Heading } from '@/components/typography';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
 import { interviewApi } from './api';
 
 const feedbackText = {
@@ -52,87 +62,82 @@ export function PracticePanel({ question }: { question: InterviewQuestionDetailD
 
   return (
     <div className="space-y-5">
-      <Card padding="lg" className="space-y-4 text-center">
+      <Card className="items-center py-8 text-center">
         <p
           role="timer"
           aria-label="Elapsed time"
-          className={cn('font-mono text-5xl font-medium tabular-nums', startedAt !== null ? 'text-accent' : 'text-navy-900')}
+          className={cn('font-mono text-5xl font-medium tabular-nums', startedAt !== null ? 'text-highlight' : 'text-navy-900')}
         >
           {formatDuration(elapsed)}
         </p>
         {!finished && startedAt === null && (
           <Button size="lg" onClick={() => setStartedAt(Date.now())}>
-            ▶ Start answering out loud
+            <Mic /> Start answering out loud
           </Button>
         )}
         {startedAt !== null && !finished && (
           <Button
             size="lg"
-            variant="accent"
+            variant="highlight"
             onClick={() => {
               setStartedAt(null);
               setFinished(true);
             }}
           >
-            ■ Stop
+            <Square /> Stop
           </Button>
         )}
         {finished && (
-          <Alert tone={answerLengthFeedback(elapsed) === 'good' ? 'success' : 'info'}>
-            {feedbackText[answerLengthFeedback(elapsed)]}
+          <Alert variant={answerLengthFeedback(elapsed) === 'good' ? 'success' : 'default'} className="mx-6 w-auto">
+            <AlertDescription>{feedbackText[answerLengthFeedback(elapsed)]}</AlertDescription>
           </Alert>
         )}
       </Card>
 
       {finished && (
-        <Card className="space-y-4">
-          <div className="space-y-2">
-            <Text size="sm" className="font-semibold" id="score-label">
-              How did it go?
-            </Text>
-            <div role="radiogroup" aria-labelledby="score-label" className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  role="radio"
-                  aria-checked={score === n}
-                  onClick={() => setScore(n)}
-                  className={cn(
-                    'size-11 rounded-control border text-sm font-semibold transition-colors',
-                    score === n
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-border-strong bg-surface hover:border-navy-300 hover:bg-primary-soft',
-                  )}
-                >
-                  {n}
-                </button>
-              ))}
+        <Card>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <p id="score-label" className="text-sm font-semibold">
+                How did it go?
+              </p>
+              <ToggleGroup
+                type="single"
+                variant="square"
+                aria-labelledby="score-label"
+                value={score === null ? '' : String(score)}
+                onValueChange={(v) => setScore(v ? Number(v) : null)}
+              >
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <ToggleGroupItem key={n} value={String(n)}>
+                    {n}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
             </div>
-          </div>
-          <Field label="Notes" hint="Words you got stuck on, what to improve...">
-            {(props) => <Textarea {...props} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />}
-          </Field>
-          <div className="flex gap-2">
-            <Button disabled={score === null} loading={save.isPending} loadingText="Saving..." onClick={() => save.mutate()}>
+            <Field label="Notes" hint="Words you got stuck on, what to improve...">
+              {(props) => <Textarea {...props} value={notes} onChange={(e) => setNotes(e.target.value)} />}
+            </Field>
+            <SaveError error={save.error} />
+          </CardContent>
+          <CardFooter className="gap-2">
+            <Button disabled={score === null} loading={save.isPending} onClick={() => save.mutate()}>
               Save practice
             </Button>
             <Button variant="ghost" onClick={reset}>
               Discard
             </Button>
-          </div>
-          {save.error && <Alert tone="danger">Could not save: {save.error.message}</Alert>}
+          </CardFooter>
         </Card>
       )}
 
       {answerText && (
         <div className="space-y-2">
           <Button variant="ghost" size="sm" aria-expanded={peek} onClick={() => setPeek(!peek)}>
+            {peek ? <EyeOff /> : <Eye />}
             {peek ? 'Hide my answer' : 'Peek at my answer'}
           </Button>
-          {peek && (
-            <Card className="bg-primary-soft text-sm leading-relaxed whitespace-pre-line">{answerText}</Card>
-          )}
+          {peek && <p className="rounded-xl bg-accent p-5 text-sm leading-relaxed whitespace-pre-line">{answerText}</p>}
         </div>
       )}
 
@@ -144,10 +149,12 @@ export function PracticePanel({ question }: { question: InterviewQuestionDetailD
           <ListCard className="text-sm">
             {question.rehearsals.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center gap-4 px-5 py-3">
-                <span className="text-fg-muted">{new Date(r.practicedAt).toLocaleDateString('en-US')}</span>
+                <span className="text-muted-foreground">{new Date(r.practicedAt).toLocaleDateString('en-US')}</span>
                 <span className="font-mono tabular-nums">{formatDuration(r.durationSec)}</span>
-                <Badge tone="accent">★ {r.selfScore}</Badge>
-                {r.notes && <span className="min-w-0 flex-1 truncate text-fg-muted">{r.notes}</span>}
+                <Badge variant="highlight">
+                  <Star /> {r.selfScore}
+                </Badge>
+                {r.notes && <span className="min-w-0 flex-1 truncate text-muted-foreground">{r.notes}</span>}
               </li>
             ))}
           </ListCard>

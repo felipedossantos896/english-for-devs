@@ -1,8 +1,13 @@
 import { reviewAnswers, type CardDto } from '@efd/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Alert, BackLink, Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingState } from '../../components/ui';
+import { Link, useSearchParams } from 'react-router-dom';
+import { BackLink } from '@/components/back-link';
+import { EmptyState, ErrorState, LoadingState, SaveError } from '@/components/states';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { flashcardsApi } from './api';
 
 export function ReviewPage() {
@@ -64,9 +69,9 @@ export function ReviewPage() {
     // A clear, positive ending makes the session feel worth coming back to (peak-end rule).
     return (
       <EmptyState icon="🎉" title={reviewed > 0 ? `Done! You reviewed ${reviewed} cards.` : 'Nothing to review right now.'}>
-        <ButtonLink to="/cards" variant="primary">
-          Back to decks
-        </ButtonLink>
+        <Button asChild>
+          <Link to="/cards">Back to decks</Link>
+        </Button>
       </EmptyState>
     );
   }
@@ -75,22 +80,27 @@ export function ReviewPage() {
     <section className="mx-auto max-w-xl space-y-5">
       <div className="flex items-center justify-between">
         <BackLink to="/cards">Decks</BackLink>
-        <Badge tone="primary">{queue.length} left</Badge>
+        <Badge>{queue.length} left</Badge>
       </div>
 
-      <Card padding="lg" className="flex min-h-64 flex-col justify-center text-center">
-        <p className="text-3xl font-semibold text-navy-900">{card.front}</p>
-        {revealed && (
-          <div className="mt-6 space-y-2 border-t border-border pt-6">
-            <p className="text-xl text-fg">{card.back}</p>
-            {card.example && <p className="text-fg-muted italic">{card.example}</p>}
-          </div>
-        )}
+      <Card className="min-h-64 justify-center py-10">
+        <CardContent className="space-y-6 text-center">
+          <p className="text-3xl font-semibold text-navy-900">{card.front}</p>
+          {revealed && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-xl">{card.back}</p>
+                {card.example && <p className="text-muted-foreground italic">{card.example}</p>}
+              </div>
+            </>
+          )}
+        </CardContent>
       </Card>
 
       {/* Big, full-width buttons right under the card: short distance, large target (Fitts's law). */}
       {!revealed ? (
-        <Button size="lg" block onClick={() => setRevealed(true)}>
+        <Button size="lg" className="w-full" onClick={() => setRevealed(true)}>
           Show answer <Kbd>Space</Kbd>
         </Button>
       ) : (
@@ -99,8 +109,8 @@ export function ReviewPage() {
             <Button
               key={option.grade}
               size="lg"
-              variant={option.label === 'Good' ? 'primary' : 'secondary'}
-              className={option.label === 'Again' ? 'text-accent' : undefined}
+              variant={option.label === 'Good' ? 'default' : 'outline'}
+              className={option.label === 'Again' ? 'text-highlight' : undefined}
               disabled={answer.isPending}
               onClick={() => answer.mutate({ card, grade: option.grade })}
             >
@@ -109,7 +119,7 @@ export function ReviewPage() {
           ))}
         </div>
       )}
-      {answer.error && <Alert tone="danger">Could not save: {answer.error.message}</Alert>}
+      <SaveError error={answer.error} />
     </section>
   );
 }

@@ -1,24 +1,20 @@
 import { stageLabels } from '@efd/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BackLink, Button, ErrorState, Eyebrow, Heading, LoadingState, Tabs, type TabItem } from '../../components/ui';
+import { BackLink } from '@/components/back-link';
+import { ErrorState, LoadingState } from '@/components/states';
+import { Eyebrow, Heading } from '@/components/typography';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { interviewApi } from './api';
 import { PracticePanel } from './PracticePanel';
 import { StarEditor } from './StarEditor';
-
-type Tab = 'answer' | 'practice';
-
-const tabs: TabItem<Tab>[] = [
-  { value: 'answer', label: 'My answer' },
-  { value: 'practice', label: 'Practice' },
-];
 
 export function QuestionPage() {
   const { questionId = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>('answer');
 
   const { data, isPending, error } = useQuery({
     queryKey: ['interview', 'question', questionId],
@@ -42,12 +38,12 @@ export function QuestionPage() {
         <BackLink to="/interview">All questions</BackLink>
         {/* Destructive action kept small, away from the main actions, and confirmed first. */}
         <Button
-          variant="danger"
+          variant="destructive"
           size="sm"
           loading={remove.isPending}
           onClick={() => window.confirm('Delete this question and its answers?') && remove.mutate()}
         >
-          Delete question
+          {!remove.isPending && <Trash2 />} Delete question
         </Button>
       </div>
 
@@ -56,15 +52,18 @@ export function QuestionPage() {
         <Heading level={1}>{data.question}</Heading>
       </div>
 
-      <Tabs label="Question sections" items={tabs} value={tab} onChange={setTab} />
-
-      <div role="tabpanel" aria-label={tabs.find((t) => t.value === tab)?.label}>
-        {tab === 'answer' ? (
+      <Tabs defaultValue="answer">
+        <TabsList aria-label="Question sections">
+          <TabsTrigger value="answer">My answer</TabsTrigger>
+          <TabsTrigger value="practice">Practice</TabsTrigger>
+        </TabsList>
+        <TabsContent value="answer">
           <StarEditor key={data.id} question={data} />
-        ) : (
+        </TabsContent>
+        <TabsContent value="practice">
           <PracticePanel key={data.id} question={data} />
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }
