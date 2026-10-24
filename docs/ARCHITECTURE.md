@@ -77,7 +77,7 @@ rehearsals:   id, question_id fk, practiced_at, duration_sec int, self_score int
 
 ```
 GET  /phases                      POST /goals/:id/progress
-GET  /routine/today               POST /routine/today/checks/:taskId   GET /routine/streak
+GET  /routine/today (tasks + streak)  PUT|DELETE /routine/today/checks/:taskId
 GET  /decks  GET /reviews/due     POST /cards/:id/review { grade }
 GET  /interview/questions?stage=  PUT  /interview/questions/:id/answer  POST /interview/questions/:id/rehearsals
 ```

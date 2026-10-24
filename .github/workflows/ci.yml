@@ -16,7 +16,7 @@ jobs:
           POSTGRES_PASSWORD: efd
           POSTGRES_DB: efd
         ports: ["5432:5432"]
-        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+        options: --health-cmd "pg_isready -U efd" --health-interval 5s --health-retries 10
     env:
       DATABASE_URL: postgres://efd:efd@localhost:5432/efd
     steps:

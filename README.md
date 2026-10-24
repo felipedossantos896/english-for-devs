@@ -26,6 +26,8 @@ pnpm db:seed             # load the initial study plan
 pnpm dev                 # api on :3333, web on :5173
 ```
 
+For production, `pnpm build` bundles the API into `apps/api/dist` (run it with `pnpm --filter @efd/api start`) and the web app into `apps/web/dist`.
+
 ## Project structure
 
 ```
