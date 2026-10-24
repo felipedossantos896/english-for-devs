@@ -2,7 +2,29 @@ import { interviewStages, stageLabels, type InterviewStage } from '@efd/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  ChipGroup,
+  EmptyState,
+  ErrorState,
+  Field,
+  Heading,
+  Input,
+  ListCard,
+  LoadingState,
+  PageHeader,
+  Select,
+  type ChipOption,
+} from '../../components/ui';
 import { interviewApi } from './api';
+
+const stageFilters: ChipOption<InterviewStage | 'all'>[] = [
+  { value: 'all', label: 'All' },
+  ...interviewStages.map((s) => ({ value: s, label: stageLabels[s] })),
+];
 
 export function InterviewPage() {
   const [params, setParams] = useSearchParams();
@@ -30,78 +52,83 @@ export function InterviewPage() {
     create.mutate();
   };
 
-  const chip = (active: boolean) =>
-    `rounded-full px-3 py-1 text-sm ${active ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`;
-
   return (
-    <section className="space-y-4">
-      <h2 className="text-lg font-semibold">Interview bank</h2>
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="Interview prep"
+        title="Interview bank"
+        description="Write your answers with STAR, then practice them out loud."
+      />
 
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={chip(!stage)} onClick={() => setParams({})}>
-          All
-        </button>
-        {interviewStages.map((s) => (
-          <button key={s} type="button" className={chip(stage === s)} onClick={() => setParams({ stage: s })}>
-            {stageLabels[s]}
-          </button>
-        ))}
-      </div>
+      <ChipGroup
+        label="Filter by stage"
+        options={stageFilters}
+        value={stage ?? 'all'}
+        onChange={(v) => setParams(v === 'all' ? {} : { stage: v })}
+      />
 
-      {isPending && <p className="text-slate-500">Loading...</p>}
-      {error && <p className="text-red-600">Could not load questions: {error.message}</p>}
+      {isPending && <LoadingState />}
+      {error && <ErrorState title="Could not load questions" error={error} />}
 
-      {data && (
-        <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-          {data.map((q) => (
-            <li key={q.id}>
-              <Link to={`/interview/${q.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
-                <span className="w-28 shrink-0 text-xs font-medium uppercase tracking-wide text-indigo-600">
-                  {stageLabels[q.stage]}
-                </span>
-                <span className="flex-1">{q.question}</span>
-                <span className="flex shrink-0 gap-3 text-xs text-slate-500">
-                  {q.hasAnswer ? <span className="text-emerald-600">✓ answer</span> : <span>no answer</span>}
-                  <span>
-                    {q.rehearsalCount} {q.rehearsalCount === 1 ? 'practice' : 'practices'}
+      {data &&
+        (data.length === 0 ? (
+          <EmptyState icon="💬" title="No questions yet" />
+        ) : (
+          <ListCard>
+            {data.map((q) => (
+              <li key={q.id}>
+                <Link
+                  to={`/interview/${q.id}`}
+                  className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-primary-soft sm:flex-row sm:items-center sm:gap-4"
+                >
+                  <Badge tone="primary" className="w-fit sm:w-32 sm:justify-center">
+                    {stageLabels[q.stage]}
+                  </Badge>
+                  <span className="flex-1 font-medium">{q.question}</span>
+                  <span className="flex shrink-0 flex-wrap gap-2">
+                    {q.hasAnswer ? <Badge tone="success">✓ Answer</Badge> : <Badge>No answer</Badge>}
+                    <Badge>
+                      {q.rehearsalCount} {q.rehearsalCount === 1 ? 'practice' : 'practices'}
+                    </Badge>
+                    {q.averageScore !== null && <Badge tone="accent">★ {q.averageScore.toFixed(1)}</Badge>}
                   </span>
-                  {q.averageScore !== null && <span>★ {q.averageScore.toFixed(1)}</span>}
-                </span>
-              </Link>
-            </li>
-          ))}
-          {data.length === 0 && <li className="px-4 py-3 text-slate-500">No questions yet.</li>}
-        </ul>
-      )}
+                </Link>
+              </li>
+            ))}
+          </ListCard>
+        ))}
 
-      <form onSubmit={onSubmit} className="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-white p-4">
-        <select
-          className="rounded-md border border-slate-300 px-2 py-2 text-sm"
-          value={newStage}
-          onChange={(e) => setNewStage(e.target.value as InterviewStage)}
-        >
-          {interviewStages.map((s) => (
-            <option key={s} value={s}>
-              {stageLabels[s]}
-            </option>
-          ))}
-        </select>
-        <input
-          className="min-w-64 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
-          placeholder="Add a question you might be asked"
-          value={newQuestion}
-          onChange={(e) => setNewQuestion(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          disabled={create.isPending}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          Add
-        </button>
-        {create.error && <p className="w-full text-sm text-red-600">Could not save: {create.error.message}</p>}
-      </form>
+      <Card as="form" onSubmit={onSubmit} className="space-y-4">
+        <Heading level={2}>Add a question</Heading>
+        <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
+          <Field label="Stage">
+            {(props) => (
+              <Select {...props} value={newStage} onChange={(e) => setNewStage(e.target.value as InterviewStage)}>
+                {interviewStages.map((s) => (
+                  <option key={s} value={s}>
+                    {stageLabels[s]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Question">
+            {(props) => (
+              <Input
+                {...props}
+                placeholder="A question you might be asked"
+                value={newQuestion}
+                onChange={(e) => setNewQuestion(e.target.value)}
+                required
+              />
+            )}
+          </Field>
+        </div>
+        <Button type="submit" loading={create.isPending} loadingText="Adding...">
+          Add question
+        </Button>
+        {create.error && <Alert tone="danger">Could not save: {create.error.message}</Alert>}
+      </Card>
     </section>
   );
 }

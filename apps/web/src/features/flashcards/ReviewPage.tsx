@@ -1,7 +1,8 @@
 import { reviewAnswers, type CardDto } from '@efd/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Alert, BackLink, Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingState } from '../../components/ui';
 import { flashcardsApi } from './api';
 
 export function ReviewPage() {
@@ -56,64 +57,67 @@ export function ReviewPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [card, revealed, answer]);
 
-  if (isPending || queue === null) return <p className="text-slate-500">Loading...</p>;
-  if (error) return <p className="text-red-600">Could not load reviews: {error.message}</p>;
+  if (isPending || queue === null) return <LoadingState />;
+  if (error) return <ErrorState title="Could not load reviews" error={error} />;
 
   if (!card) {
+    // A clear, positive ending makes the session feel worth coming back to (peak-end rule).
     return (
-      <section className="space-y-4 text-center">
-        <p className="text-4xl">🎉</p>
-        <h2 className="text-lg font-semibold">
-          {reviewed > 0 ? `Done! You reviewed ${reviewed} cards.` : 'Nothing to review right now.'}
-        </h2>
-        <Link to="/cards" className="text-sm font-medium text-indigo-600">
+      <EmptyState icon="🎉" title={reviewed > 0 ? `Done! You reviewed ${reviewed} cards.` : 'Nothing to review right now.'}>
+        <ButtonLink to="/cards" variant="primary">
           Back to decks
-        </Link>
-      </section>
+        </ButtonLink>
+      </EmptyState>
     );
   }
 
   return (
-    <section className="mx-auto max-w-xl space-y-4">
-      <div className="flex justify-between text-sm text-slate-500">
-        <Link to="/cards">← Decks</Link>
-        <span>{queue.length} left</span>
+    <section className="mx-auto max-w-xl space-y-5">
+      <div className="flex items-center justify-between">
+        <BackLink to="/cards">Decks</BackLink>
+        <Badge tone="primary">{queue.length} left</Badge>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-2xl font-medium">{card.front}</p>
+      <Card padding="lg" className="flex min-h-64 flex-col justify-center text-center">
+        <p className="text-3xl font-semibold text-navy-900">{card.front}</p>
         {revealed && (
-          <div className="mt-6 space-y-2 border-t border-slate-100 pt-6">
-            <p className="text-lg text-slate-700">{card.back}</p>
-            {card.example && <p className="italic text-slate-500">{card.example}</p>}
+          <div className="mt-6 space-y-2 border-t border-border pt-6">
+            <p className="text-xl text-fg">{card.back}</p>
+            {card.example && <p className="text-fg-muted italic">{card.example}</p>}
           </div>
         )}
-      </div>
+      </Card>
 
+      {/* Big, full-width buttons right under the card: short distance, large target (Fitts's law). */}
       {!revealed ? (
-        <button
-          type="button"
-          onClick={() => setRevealed(true)}
-          className="w-full rounded-md bg-indigo-600 py-3 font-medium text-white"
-        >
-          Show answer <span className="text-indigo-200">(space)</span>
-        </button>
+        <Button size="lg" block onClick={() => setRevealed(true)}>
+          Show answer <Kbd>Space</Kbd>
+        </Button>
       ) : (
-        <div className="grid grid-cols-4 gap-2">
+        <div role="group" aria-label="How well did you remember?" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {reviewAnswers.map((option, i) => (
-            <button
+            <Button
               key={option.grade}
-              type="button"
+              size="lg"
+              variant={option.label === 'Good' ? 'primary' : 'secondary'}
+              className={option.label === 'Again' ? 'text-accent' : undefined}
               disabled={answer.isPending}
               onClick={() => answer.mutate({ card, grade: option.grade })}
-              className="rounded-md border border-slate-300 bg-white py-3 text-sm font-medium disabled:opacity-50"
             >
-              {option.label} <span className="text-slate-400">({i + 1})</span>
-            </button>
+              {option.label} <Kbd>{i + 1}</Kbd>
+            </Button>
           ))}
         </div>
       )}
-      {answer.error && <p className="text-sm text-red-600">Could not save: {answer.error.message}</p>}
+      {answer.error && <Alert tone="danger">Could not save: {answer.error.message}</Alert>}
     </section>
+  );
+}
+
+function Kbd({ children }: { children: ReactNode }) {
+  return (
+    <kbd aria-hidden className="rounded border border-current/30 px-1.5 font-mono text-xs opacity-70">
+      {children}
+    </kbd>
   );
 }
