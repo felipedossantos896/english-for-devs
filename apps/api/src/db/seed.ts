@@ -1,5 +1,7 @@
+import { eq } from 'drizzle-orm';
 import { db, pool } from './client.js';
-import { decks, goals, interviewQuestions, phases, routineTasks, users } from './schema.js';
+import { cards, decks, goals, interviewQuestions, phases, routineTasks, users } from './schema.js';
+import { starterCards } from './starter-cards.js';
 
 async function seed() {
   const [user] = await db
@@ -56,7 +58,24 @@ async function seed() {
   console.log('Seed complete.');
 }
 
+/** Fills empty decks with starter cards. Safe to run on an already seeded database. */
+async function seedCards() {
+  for (const deck of await db.select().from(decks)) {
+    const [existing] = await db
+      .select({ id: cards.id })
+      .from(cards)
+      .where(eq(cards.deckId, deck.id))
+      .limit(1);
+    if (existing) continue;
+
+    const starter = starterCards[deck.layer];
+    await db.insert(cards).values(starter.map((card) => ({ deckId: deck.id, ...card })));
+    console.log(`Added ${starter.length} cards to "${deck.name}".`);
+  }
+}
+
 seed()
+  .then(seedCards)
   .catch((err) => {
     console.error(err);
     process.exitCode = 1;
