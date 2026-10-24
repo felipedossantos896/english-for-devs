@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RoutineTodayDto } from '@efd/shared';
+import { Alert, Card, ErrorState, LoadingState, PageHeader, ProgressBar, Stat, Text } from '../../components/ui';
 import { api } from '../../lib/api';
+import { cn } from '../../lib/cn';
 
 const queryKey = ['routine', 'today'];
 
@@ -17,68 +19,70 @@ export function RoutinePage() {
     onSuccess: (today) => queryClient.setQueryData(queryKey, today),
   });
 
-  if (isPending) return <p className="text-slate-500">Loading...</p>;
-  if (error) return <p className="text-red-600">Could not load today's routine: {error.message}</p>;
+  if (isPending) return <LoadingState />;
+  if (error) return <ErrorState title="Could not load today's routine" error={error} />;
 
   const doneCount = data.tasks.filter((t) => t.checked).length;
   const totalMinutes = data.tasks.reduce((sum, t) => sum + t.minutes, 0);
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-end justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Today</h2>
-          <p className="text-sm text-slate-500">
-            {new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-2xl font-semibold">🔥 {data.streak}</p>
-          <p className="text-xs text-slate-500">weekday streak</p>
-        </div>
-      </div>
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="Daily routine"
+        title="Today"
+        description={new Date(`${data.date}T12:00:00`).toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+        })}
+        actions={<Stat icon="🔥" value={data.streak} label="weekday streak" tone="accent" />}
+      />
 
       {!data.isStudyDay ? (
-        <p className="rounded-lg border border-slate-200 bg-white p-4 text-slate-600">
-          No study tasks today. Enjoy the weekend: your streak is safe.
-        </p>
+        <Alert>No study tasks today. Enjoy the weekend: your streak is safe.</Alert>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-white">
-          <div className="flex justify-between border-b border-slate-100 px-4 py-3 text-sm text-slate-500">
-            <span>
-              {doneCount}/{data.tasks.length} done
-            </span>
-            <span>{totalMinutes} min</span>
+        <Card padding="none">
+          <div className="space-y-2 border-b border-border px-5 py-4">
+            <div className="flex justify-between text-sm">
+              <span className="font-semibold text-fg">
+                {doneCount} of {data.tasks.length} done
+              </span>
+              <span className="text-fg-muted">{totalMinutes} min total</span>
+            </div>
+            <ProgressBar
+              label="Tasks done today"
+              value={data.tasks.length ? doneCount / data.tasks.length : 0}
+              tone={data.completed ? 'success' : 'primary'}
+            />
           </div>
-          <ul>
+          <ul className="divide-y divide-border">
             {data.tasks.map((task) => (
-              <li key={task.id} className="border-b border-slate-100 last:border-0">
-                <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
+              <li key={task.id}>
+                {/* The whole row is the hit area, not only the small checkbox (Fitts's law). */}
+                <label className="flex min-h-14 cursor-pointer items-center gap-4 px-5 py-3 transition-colors hover:bg-primary-soft">
                   <input
                     type="checkbox"
-                    className="size-5 accent-indigo-600"
+                    className="size-5 shrink-0 accent-navy-700"
                     checked={task.checked}
                     disabled={toggle.isPending}
                     onChange={(e) => toggle.mutate({ taskId: task.id, checked: e.target.checked })}
                   />
-                  <span className={task.checked ? 'text-slate-400 line-through' : ''}>{task.title}</span>
-                  <span className="ml-auto text-sm text-slate-400">{task.minutes} min</span>
+                  <span className={cn('flex-1', task.checked && 'text-fg-subtle line-through')}>{task.title}</span>
+                  <Text as="span" size="sm" tone="muted" className="tabular-nums">
+                    {task.minutes} min
+                  </Text>
                 </label>
               </li>
             ))}
           </ul>
           {data.completed && (
-            <p className="rounded-b-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              All done for today. Great work!
-            </p>
+            <div className="border-t border-border p-4">
+              <Alert tone="success">🎉 All done for today. Great work!</Alert>
+            </div>
           )}
-        </div>
+        </Card>
       )}
-      {toggle.error && <p className="text-sm text-red-600">Could not save: {toggle.error.message}</p>}
+      {toggle.error && <Alert tone="danger">Could not save: {toggle.error.message}</Alert>}
     </section>
   );
 }

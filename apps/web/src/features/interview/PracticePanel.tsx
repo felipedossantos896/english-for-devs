@@ -1,6 +1,8 @@
 import { answerLengthFeedback, formatDuration, type InterviewQuestionDetailDto } from '@efd/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { Alert, Badge, Button, Card, Field, Heading, ListCard, Text, Textarea } from '../../components/ui';
+import { cn } from '../../lib/cn';
 import { interviewApi } from './api';
 
 const feedbackText = {
@@ -49,94 +51,106 @@ export function PracticePanel({ question }: { question: InterviewQuestionDetailD
   const answerText = question.answer?.fullAnswer;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-center">
-        <p className="font-mono text-4xl">{formatDuration(elapsed)}</p>
+    <div className="space-y-5">
+      <Card padding="lg" className="space-y-4 text-center">
+        <p
+          role="timer"
+          aria-label="Elapsed time"
+          className={cn('font-mono text-5xl font-medium tabular-nums', startedAt !== null ? 'text-accent' : 'text-navy-900')}
+        >
+          {formatDuration(elapsed)}
+        </p>
         {!finished && startedAt === null && (
-          <button
-            type="button"
-            onClick={() => setStartedAt(Date.now())}
-            className="mt-4 rounded-md bg-indigo-600 px-6 py-2 font-medium text-white"
-          >
-            Start answering out loud
-          </button>
+          <Button size="lg" onClick={() => setStartedAt(Date.now())}>
+            ▶ Start answering out loud
+          </Button>
         )}
         {startedAt !== null && !finished && (
-          <button
-            type="button"
+          <Button
+            size="lg"
+            variant="accent"
             onClick={() => {
               setStartedAt(null);
               setFinished(true);
             }}
-            className="mt-4 rounded-md bg-slate-800 px-6 py-2 font-medium text-white"
           >
-            Stop
-          </button>
+            ■ Stop
+          </Button>
         )}
-        {finished && <p className="mt-2 text-sm text-slate-600">{feedbackText[answerLengthFeedback(elapsed)]}</p>}
-      </div>
+        {finished && (
+          <Alert tone={answerLengthFeedback(elapsed) === 'good' ? 'success' : 'info'}>
+            {feedbackText[answerLengthFeedback(elapsed)]}
+          </Alert>
+        )}
+      </Card>
 
       {finished && (
-        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-          <p className="text-sm font-medium">How did it go?</p>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setScore(n)}
-                className={`size-10 rounded-md border text-sm ${score === n ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}
-              >
-                {n}
-              </button>
-            ))}
+        <Card className="space-y-4">
+          <div className="space-y-2">
+            <Text size="sm" className="font-semibold" id="score-label">
+              How did it go?
+            </Text>
+            <div role="radiogroup" aria-labelledby="score-label" className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={score === n}
+                  onClick={() => setScore(n)}
+                  className={cn(
+                    'size-11 rounded-control border text-sm font-semibold transition-colors',
+                    score === n
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-border-strong bg-surface hover:border-navy-300 hover:bg-primary-soft',
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
-          <textarea
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            rows={2}
-            placeholder="Notes: words you got stuck on, what to improve..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
+          <Field label="Notes" hint="Words you got stuck on, what to improve...">
+            {(props) => <Textarea {...props} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />}
+          </Field>
           <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={score === null || save.isPending}
-              onClick={() => save.mutate()}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
+            <Button disabled={score === null} loading={save.isPending} loadingText="Saving..." onClick={() => save.mutate()}>
               Save practice
-            </button>
-            <button type="button" onClick={reset} className="px-4 py-2 text-sm text-slate-500">
+            </Button>
+            <Button variant="ghost" onClick={reset}>
               Discard
-            </button>
+            </Button>
           </div>
-          {save.error && <p className="text-sm text-red-600">Could not save: {save.error.message}</p>}
-        </div>
+          {save.error && <Alert tone="danger">Could not save: {save.error.message}</Alert>}
+        </Card>
       )}
 
       {answerText && (
-        <div>
-          <button type="button" onClick={() => setPeek(!peek)} className="text-sm text-indigo-600">
+        <div className="space-y-2">
+          <Button variant="ghost" size="sm" aria-expanded={peek} onClick={() => setPeek(!peek)}>
             {peek ? 'Hide my answer' : 'Peek at my answer'}
-          </button>
-          {peek && <p className="mt-2 whitespace-pre-line rounded-lg bg-slate-100 p-4 text-sm">{answerText}</p>}
+          </Button>
+          {peek && (
+            <Card className="bg-primary-soft text-sm leading-relaxed whitespace-pre-line">{answerText}</Card>
+          )}
         </div>
       )}
 
       {question.rehearsals.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-medium">Recent practice</h3>
-          <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
+        <div className="space-y-3">
+          <Heading level={3} as="h2">
+            Recent practice
+          </Heading>
+          <ListCard className="text-sm">
             {question.rehearsals.map((r) => (
-              <li key={r.id} className="flex gap-4 px-4 py-2">
-                <span className="text-slate-500">{new Date(r.practicedAt).toLocaleDateString('en-US')}</span>
-                <span>{formatDuration(r.durationSec)}</span>
-                <span>★ {r.selfScore}</span>
-                {r.notes && <span className="flex-1 truncate text-slate-500">{r.notes}</span>}
+              <li key={r.id} className="flex flex-wrap items-center gap-4 px-5 py-3">
+                <span className="text-fg-muted">{new Date(r.practicedAt).toLocaleDateString('en-US')}</span>
+                <span className="font-mono tabular-nums">{formatDuration(r.durationSec)}</span>
+                <Badge tone="accent">★ {r.selfScore}</Badge>
+                {r.notes && <span className="min-w-0 flex-1 truncate text-fg-muted">{r.notes}</span>}
               </li>
             ))}
-          </ul>
+          </ListCard>
         </div>
       )}
     </div>
