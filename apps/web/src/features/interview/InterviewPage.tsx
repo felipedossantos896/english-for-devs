@@ -1,30 +1,19 @@
 import { interviewStages, stageLabels, type InterviewStage } from '@efd/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { Check, Star } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  ChipGroup,
-  EmptyState,
-  ErrorState,
-  Field,
-  Heading,
-  Input,
-  ListCard,
-  LoadingState,
-  PageHeader,
-  Select,
-  type ChipOption,
-} from '../../components/ui';
+import { Field } from '@/components/field';
+import { ListCard } from '@/components/list-card';
+import { EmptyState, ErrorState, LoadingState, SaveError } from '@/components/states';
+import { PageHeader } from '@/components/typography';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { interviewApi } from './api';
-
-const stageFilters: ChipOption<InterviewStage | 'all'>[] = [
-  { value: 'all', label: 'All' },
-  ...interviewStages.map((s) => ({ value: s, label: stageLabels[s] })),
-];
 
 export function InterviewPage() {
   const [params, setParams] = useSearchParams();
@@ -60,12 +49,20 @@ export function InterviewPage() {
         description="Write your answers with STAR, then practice them out loud."
       />
 
-      <ChipGroup
-        label="Filter by stage"
-        options={stageFilters}
+      <ToggleGroup
+        type="single"
+        aria-label="Filter by stage"
         value={stage ?? 'all'}
-        onChange={(v) => setParams(v === 'all' ? {} : { stage: v })}
-      />
+        // Radix lets a single toggle be switched off; ignore that so one filter is always active.
+        onValueChange={(v) => v && setParams(v === 'all' ? {} : { stage: v })}
+      >
+        <ToggleGroupItem value="all">All</ToggleGroupItem>
+        {interviewStages.map((s) => (
+          <ToggleGroupItem key={s} value={s}>
+            {stageLabels[s]}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
 
       {isPending && <LoadingState />}
       {error && <ErrorState title="Could not load questions" error={error} />}
@@ -79,18 +76,26 @@ export function InterviewPage() {
               <li key={q.id}>
                 <Link
                   to={`/interview/${q.id}`}
-                  className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-primary-soft sm:flex-row sm:items-center sm:gap-4"
+                  className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:gap-4"
                 >
-                  <Badge tone="primary" className="w-fit sm:w-32 sm:justify-center">
-                    {stageLabels[q.stage]}
-                  </Badge>
+                  <Badge className="sm:w-32">{stageLabels[q.stage]}</Badge>
                   <span className="flex-1 font-medium">{q.question}</span>
                   <span className="flex shrink-0 flex-wrap gap-2">
-                    {q.hasAnswer ? <Badge tone="success">✓ Answer</Badge> : <Badge>No answer</Badge>}
-                    <Badge>
+                    {q.hasAnswer ? (
+                      <Badge variant="success">
+                        <Check /> Answer
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">No answer</Badge>
+                    )}
+                    <Badge variant="secondary">
                       {q.rehearsalCount} {q.rehearsalCount === 1 ? 'practice' : 'practices'}
                     </Badge>
-                    {q.averageScore !== null && <Badge tone="accent">★ {q.averageScore.toFixed(1)}</Badge>}
+                    {q.averageScore !== null && (
+                      <Badge variant="highlight">
+                        <Star /> {q.averageScore.toFixed(1)}
+                      </Badge>
+                    )}
                   </span>
                 </Link>
               </li>
@@ -98,37 +103,52 @@ export function InterviewPage() {
           </ListCard>
         ))}
 
-      <Card as="form" onSubmit={onSubmit} className="space-y-4">
-        <Heading level={2}>Add a question</Heading>
-        <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
-          <Field label="Stage">
-            {(props) => (
-              <Select {...props} value={newStage} onChange={(e) => setNewStage(e.target.value as InterviewStage)}>
-                {interviewStages.map((s) => (
-                  <option key={s} value={s}>
-                    {stageLabels[s]}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Question">
-            {(props) => (
-              <Input
-                {...props}
-                placeholder="A question you might be asked"
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-                required
-              />
-            )}
-          </Field>
-        </div>
-        <Button type="submit" loading={create.isPending} loadingText="Adding...">
-          Add question
-        </Button>
-        {create.error && <Alert tone="danger">Could not save: {create.error.message}</Alert>}
-      </Card>
+      <form onSubmit={onSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 className="text-lg">Add a question</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
+              <Field label="Stage">
+                {(props) => (
+                  <Select value={newStage} onValueChange={(v) => setNewStage(v as InterviewStage)}>
+                    <SelectTrigger {...props}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {interviewStages.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {stageLabels[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </Field>
+              <Field label="Question">
+                {(props) => (
+                  <Input
+                    {...props}
+                    placeholder="A question you might be asked"
+                    value={newQuestion}
+                    onChange={(e) => setNewQuestion(e.target.value)}
+                    required
+                  />
+                )}
+              </Field>
+            </div>
+            <SaveError error={create.error} />
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" loading={create.isPending}>
+              Add question
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
     </section>
   );
 }

@@ -4,7 +4,7 @@ import type {
   InterviewStage,
   StarParts,
 } from '@efd/shared';
-import { api } from '../../lib/api';
+import { api } from '@/lib/api';
 
 export interface QuestionInput {
   stage: InterviewStage;

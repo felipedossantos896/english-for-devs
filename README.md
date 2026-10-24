@@ -38,4 +38,4 @@ docs/            Architecture notes
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data model and roadmap.
-See [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for the UI tokens, components and UX rules (live reference at `/ui`).
+See [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for the UI tokens, shadcn/ui components and UX rules (live reference at `/ui`).

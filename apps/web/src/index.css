@@ -1,10 +1,12 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 /*
  * Design tokens: "Old Glory" palette from the US flag.
- * Navy (#0A3161) and red (#B31942) are the official flag colors; the rest of each
- * scale is derived from them. Components use the semantic tokens below the scales
- * (primary, accent, surface, ...) so the palette can change in one place.
+ * Navy (#0A3161) and red (#B31942) are the official flag colors; each scale is derived from them.
+ * The CSS variables in :root follow the shadcn/ui naming (primary, destructive, muted, ...) so
+ * components added with `npx shadcn add` pick up the palette without changes. `highlight` is our
+ * extra token for the flag red used as an attention color.
  */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -39,50 +41,95 @@
   --color-ink-200: #dde1ea;
   --color-ink-300: #c3c9d6;
   --color-ink-400: #8e97aa;
-  --color-ink-500: #636d82; /* 5.2:1 on white: smallest allowed text color */
+  --color-ink-500: #636d82; /* 5.2:1 on white: lightest allowed text color */
   --color-ink-600: #4a5468;
   --color-ink-700: #353d4f;
   --color-ink-800: #222938;
   --color-ink-900: #141a26;
 
-  /* Semantic tokens. */
-  --color-primary: var(--color-navy-700);
-  --color-primary-hover: var(--color-navy-800);
-  --color-primary-soft: var(--color-navy-50);
-  --color-accent: var(--color-red-600);
-  --color-accent-hover: var(--color-red-700);
-  --color-accent-soft: var(--color-red-50);
-  --color-surface: #ffffff;
-  --color-canvas: var(--color-ink-50);
-  --color-border: var(--color-ink-200);
-  --color-border-strong: var(--color-ink-300);
-  --color-fg: var(--color-ink-900);
-  --color-fg-muted: var(--color-ink-600);
-  --color-fg-subtle: var(--color-ink-500);
-  --color-success: #17703f;
-  --color-success-soft: #e8f5ee;
-  --color-danger: var(--color-red-600);
-  --color-danger-soft: var(--color-red-50);
-
-  --radius-control: 0.5rem;
-  --radius-card: 0.75rem;
-
   --shadow-card: 0 1px 2px rgb(10 49 97 / 0.06), 0 1px 3px rgb(10 49 97 / 0.08);
   --shadow-raised: 0 4px 12px rgb(10 49 97 / 0.12);
 }
 
+:root {
+  --radius: 0.625rem;
+
+  --background: var(--color-ink-50);
+  --foreground: var(--color-ink-900);
+  --card: #ffffff;
+  --card-foreground: var(--color-ink-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--color-ink-900);
+
+  --primary: var(--color-navy-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-ink-100);
+  --secondary-foreground: var(--color-ink-900);
+  --muted: var(--color-ink-100);
+  --muted-foreground: var(--color-ink-600);
+  --accent: var(--color-navy-50);
+  --accent-foreground: var(--color-navy-800);
+  --destructive: var(--color-red-600);
+
+  --highlight: var(--color-red-600);
+  --highlight-foreground: #ffffff;
+  --highlight-soft: var(--color-red-50);
+  --success: #17703f;
+  --success-soft: #e8f5ee;
+
+  --border: var(--color-ink-200);
+  --input: var(--color-ink-300);
+  --ring: var(--color-navy-400);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-highlight-soft: var(--highlight-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
   }
 
   body {
-    @apply bg-canvas text-fg font-sans;
+    @apply bg-background text-foreground font-sans;
   }
 
-  /* One visible focus style for every interactive element (keyboard users). */
-  :focus-visible {
-    outline: 3px solid var(--color-navy-400);
+  /* Visible focus for plain links and buttons; shadcn components draw their own ring. */
+  a:focus-visible,
+  button:focus-visible {
+    outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
 
