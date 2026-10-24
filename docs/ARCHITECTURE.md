@@ -80,7 +80,8 @@ GET  /phases                      POST /goals/:id/progress
 GET  /routine/today (tasks + streak)  PUT|DELETE /routine/today/checks/:taskId
 GET  /decks   GET|POST /decks/:id/cards   PATCH|DELETE /cards/:id
 GET  /reviews/due?deckId=&limit=   POST /cards/:id/review { grade }
-GET  /interview/questions?stage=  PUT  /interview/questions/:id/answer  POST /interview/questions/:id/rehearsals
+GET|POST /interview/questions?stage=   GET|PATCH|DELETE /interview/questions/:id
+PUT  /interview/questions/:id/answer (saves a new version)   POST /interview/questions/:id/rehearsals
 ```
 
 ## Delivery plan

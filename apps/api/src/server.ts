@@ -1,6 +1,7 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import { flashcardsRoutes } from './modules/flashcards/routes.js';
+import { interviewRoutes } from './modules/interview/routes.js';
 import { phasesRoutes } from './modules/phases/routes.js';
 import { routineRoutes } from './modules/routine/routes.js';
 
@@ -11,5 +12,6 @@ app.get('/health', async () => ({ ok: true }));
 await app.register(phasesRoutes);
 await app.register(routineRoutes);
 await app.register(flashcardsRoutes);
+await app.register(interviewRoutes);
 
 await app.listen({ port: Number(process.env.PORT ?? 3333), host: '0.0.0.0' });

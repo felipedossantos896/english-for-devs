@@ -1,0 +1,1 @@
+ALTER TABLE "star_answers" ADD CONSTRAINT "star_answers_question_id_version_unique" UNIQUE("question_id","version");
